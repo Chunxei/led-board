@@ -62,8 +62,6 @@ function App(): JSX.Element {
       break;
     }
 
-    console.log('[name, value]:', target.name, value);
-
     setFields((prevState) => ({
       ...prevState,
       [target.name]: value,
