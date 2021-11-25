@@ -1,0 +1,17 @@
+// Bands
+@mixin red-band { border: 1px solid red; }
+@mixin orange-band { border: 1px solid orange; }
+@mixin green-band { border: 1px solid green; }
+@mixin teal-band { border: 1px solid rgb(0, 255, 200); }
+@mixin blue-band { border: 1px solid blue; }
+@mixin indigo-band { border: 1px solid indigo; }
+@mixin violet-band { border: 1px solid violet; }
+
+// Halos
+@mixin red-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(255, 0, 0, .8) }
+@mixin orange-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(255, 165, 0, .8) }
+@mixin green-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(0, 128, 0, .8) }
+@mixin teal-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(0, 255, 200, 0.8) }
+@mixin blue-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(0, 0, 255, .8) }
+@mixin indigo-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(75, 0, 130, .8) }
+@mixin violet-halo($blur) { box-shadow: 0 0 #{$blur}px rgba(255, 37, 255, .8) }
