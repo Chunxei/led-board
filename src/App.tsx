@@ -18,7 +18,7 @@ function App(): JSX.Element {
   const [fields, setFields] = useState<ILEDConfiguration>({
     dimensions: 7,
     speed: 17,
-    isInteractive: true,
+    isInteractive: false,
     renderPattern: 'random',
     isFullScreen: false,
   });
