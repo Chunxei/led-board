@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "export PORT=9800 && react-scripts start",
+    "start": "react-scripts start",
+    "dev": "export PORT=9800 && npm start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
