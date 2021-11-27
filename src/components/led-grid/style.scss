@@ -51,9 +51,7 @@
       height: 100%;
       border-radius: 2px;
       background-color: #000;
-      will-change: box-shadow, transform, border-radius;
-      transition: background-color 0.5s, box-shadow 0.3s, transform 0.4s,
-        border-radius 0.4s;
+      transition: background-color 0.5s, transform 0.4s, border-radius 0.4s;
       cursor: default;
     }
   }

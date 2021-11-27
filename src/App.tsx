@@ -1,12 +1,16 @@
 import React, {useState} from 'react';
 import './App.scss';
-import LEDGrid from './components/led-grid';
+import LEDGrid, {RenderPatternTypes} from './components/led-grid';
+import {RenderPaletteTypes} from './components/led-grid/types';
+import {RENDER_PALETTE, RENDER_PATTERNS} from './utils/constants';
 
 interface ILEDConfiguration {
   dimensions: number
   speed: number
   isInteractive: boolean
-  renderPattern: 'random' | 'waterfall' | 'flip'
+  renderPattern: RenderPatternTypes
+  renderPalette: RenderPaletteTypes
+  padding: number
   isFullScreen: boolean
 }
 
@@ -19,11 +23,11 @@ function App(): JSX.Element {
     dimensions: 7,
     speed: 17,
     isInteractive: false,
-    renderPattern: 'random',
+    renderPattern: RENDER_PATTERNS.random,
+    renderPalette: RENDER_PALETTE.random,
+    padding: 1,
     isFullScreen: false,
   });
-
-  const renderPatterns = ['random', 'waterfall', 'flip'];
 
   const toggleControls = (): void => {
     setAreControlsOpen((prevState: boolean) => !prevState);
@@ -77,6 +81,8 @@ function App(): JSX.Element {
           speed={fields.speed}
           isInteractive={fields.isInteractive}
           renderPattern={fields.renderPattern}
+          renderPalette={fields.renderPalette}
+          padding={fields.padding}
         />
       </section>
 
@@ -116,6 +122,19 @@ function App(): JSX.Element {
           />
         </label>
 
+        <label htmlFor="padding">
+          Cell Boundary: {fields.padding}
+          <input
+            type="range"
+            id="padding"
+            name="padding"
+            min={0}
+            max={5}
+            value={fields.padding}
+            onChange={updateFields}
+          />
+        </label>
+
         <label htmlFor="renderPattern">
           Render pattern:
           <select
@@ -124,11 +143,35 @@ function App(): JSX.Element {
             value={fields.renderPattern}
             onChange={updateFields}
           >
-            { renderPatterns.map((pattern) => (
+            { Object.values(RENDER_PATTERNS).map((pattern) => (
               <option key={pattern} value={pattern}>
                 { pattern }
               </option>
             )) }
+          </select>
+        </label>
+
+        <label htmlFor="renderPalette">
+          Render palette:
+          <select
+            name="renderPalette"
+            id="renderPalette"
+            value={fields.renderPalette}
+            onChange={updateFields}
+          >
+            { Object.values(RENDER_PALETTE)
+              .filter((palette) => (
+                /* don't offer 'gradient' renderPalette
+                with 'random' renderPattern */
+                !(fields.renderPattern === RENDER_PATTERNS.random &&
+                  palette === RENDER_PALETTE.gradient)
+              ))
+              .map((palette) => (
+                <option key={palette} value={palette}>
+                  { palette }
+                </option>
+              ))
+            }
           </select>
         </label>
 

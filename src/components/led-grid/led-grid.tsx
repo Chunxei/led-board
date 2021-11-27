@@ -1,7 +1,9 @@
+/* eslint-disable no-unused-vars */
 import React, {useEffect, useState} from 'react';
 import './style.scss';
 import {ILEDGridProps, LEDMatrixType} from './types';
-import rngInRange from '../../utils/rngInRange';
+import {RENDER_PALETTE, RENDER_PATTERNS} from '../../utils/constants';
+import HELPERS from '../../utils/helpers';
 
 
 /**
@@ -15,16 +17,23 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
     dimensions = 10,
     speed = 10,
     isInteractive = false,
-    renderPattern = 'random',
+    renderPattern = RENDER_PATTERNS.random,
+    renderPalette = RENDER_PALETTE.random,
+    padding = 1,
   } = props;
 
+  console.log('palette:', renderPalette);
+
   const [/* tableMatrix */, setTableMatrix] = useState<LEDMatrixType>([[1, 1]]);
-  const [colorRotationInterval, setColorRotationInterval] = useState<any>(null);
+  const [
+    colorRotationInterval,
+    setColorRotationInterval,
+  ] = useState<number>();
 
   const [
     renderPatternTimeouts,
     setRenderPatternTimeouts,
-  ] = useState<any>([] as any[]);
+  ] = useState<number[]>([]);
 
   /* for performance reasons, do not exceed 15 */
   const safeDimensions = Math.max(1, Math.min(dimensions, 15));
@@ -32,23 +41,22 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
   /* for performance reasons, do not exceed 50 */
   const safeSpeed = Math.max(1, Math.min(speed, 50));
 
+  const safePadding = Math.max(0, Math.min(padding, 5));
+
   const dimensionRange = Array.from(
     {length: safeDimensions},
     (_, dim) => dim + 1,
   );
 
   const clearTimers = (): void => {
-    clearInterval(colorRotationInterval);
+    window.clearInterval(colorRotationInterval);
 
     renderPatternTimeouts.forEach((timeout: any) => {
-      clearTimeout(timeout);
+      window.clearTimeout(timeout);
     });
-  };
 
-  const generateRandomColor = (alpha: number = 1): string => (
-    `rgb(${rngInRange(0, 255)},${
-      rngInRange(0, 255)},${rngInRange(0, 255)},${alpha})`
-  );
+    setRenderPatternTimeouts([] as number[]);
+  };
 
   /**
    * takes a matrix and uses RNG to assign color values
@@ -60,51 +68,119 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
     const timeouts = [] as any[];
 
     switch (renderPattern) {
-    case 'waterfall':
-
+    case RENDER_PATTERNS.waterfall:
+    case RENDER_PATTERNS.curtain:
+    case RENDER_PATTERNS.flip:
       dimensionRange.forEach((rowIndex) => {
         const rowElement = document
           .getElementById(`row-${rowIndex}`);
 
+        let cellColor = HELPERS.generateColor();
+
+        const colorOptions = {
+          [['r', 'g', 'b'][HELPERS.rng(0, 2)]]: HELPERS.rng(0, 255),
+        };
+
         if (rowElement) {
-          Array.prototype.forEach.call(rowElement.children, (child, index2) => {
-            const cellTimeout = setTimeout(() => {
-              child.children[0].style.backgroundColor = generateRandomColor();
-              /* 51 === speed threshold + 1 */
-            }, (rowIndex * 50) - (safeSpeed * 5));
+          Array.prototype.forEach.call(
+            rowElement.children,
+            (child, childIndex) => {
+              let currentCell = child.children[0];
 
-            timeouts.push(cellTimeout);
-          });
+              const addedTime = renderPattern === 'curtain' ?
+                (childIndex * 100) : 0;
+
+              switch (renderPalette) {
+              case RENDER_PALETTE.random:
+                cellColor = HELPERS.generateColor();
+                break;
+
+              case RENDER_PALETTE.gradient:
+                const colorGraduation = Math.min(255, HELPERS.rng(
+                  ((childIndex + 1) * 17),
+                  ((childIndex + 2) * 17),
+                ));
+
+                cellColor = HELPERS.generateColor({
+                  r: colorGraduation,
+                  g: colorGraduation,
+                  b: colorGraduation,
+                  ...colorOptions,
+                });
+                break;
+
+              case RENDER_PALETTE.column:
+                currentCell = document
+                  .getElementById(`cell-body-${childIndex + 1}-${rowIndex}`);
+                break;
+
+              case RENDER_PALETTE.row:
+              default:
+                break;
+              }
+
+              const time = renderPattern === RENDER_PATTERNS.flip ?
+                0 : (rowIndex * 50) + addedTime - (safeSpeed * 5);
+
+              const cellTimeout = window
+                .setTimeout((element: HTMLElement, color: string) => {
+                  element.style.backgroundColor = color;
+                },
+                /* to stagger each row's repaint, and sync it with safeSpeed */
+                time,
+                currentCell,
+                cellColor);
+
+              timeouts.push(cellTimeout);
+            });
         }
       });
       break;
 
-    case 'flip':
-      matrix.forEach((cell, cellIndex) => {
-        const cellElement = document
-          .getElementById(`cell-body-${cell[0]}-${cell[1]}`);
-
-        if (cellElement) {
-          cellElement.style.backgroundColor = generateRandomColor();
-        }
-      });
-      break;
-
-      //
-    case 'random':
+    case RENDER_PATTERNS.random:
     default:
+      const rowColors = [] as any[];
+
       Array.from({length: safeSpeed * 10})
         .forEach((_, i) => {
-          const randomCell = matrix[rngInRange(0, matrix.length - 1)];
+          let cellColor = HELPERS.generateColor();
 
-          const cellElement = document
+          const randomCell = matrix[HELPERS.rng(0, matrix.length - 1)];
+
+          let cellElement = document
             .getElementById(`cell-body-${randomCell[0]}-${randomCell[1]}`);
 
+          switch (renderPalette) {
+          case RENDER_PALETTE.row:
+          case RENDER_PALETTE.column:
+            if (
+              !rowColors[randomCell[0]] ||
+              typeof rowColors[randomCell[0]] !== 'string'
+            ) {
+              rowColors[randomCell[0]] = HELPERS.generateColor();
+            }
+
+            cellColor = rowColors[randomCell[0]] as string;
+
+            if (renderPalette === RENDER_PALETTE.column) {
+              cellElement = document
+                .getElementById(`cell-body-${randomCell[1]}-${randomCell[0]}`);
+            }
+            break;
+
+          case RENDER_PALETTE.random:
+          default:
+            break;
+          }
+
           if (cellElement) {
-            const cellTimeout = setTimeout(() => {
-              cellElement.style.backgroundColor = generateRandomColor();
-              /* repaint interval duration */
-            }, rngInRange(100, 4500));
+            const cellTimeout = window.setTimeout(
+              (element: HTMLElement) => {
+                element.style.backgroundColor = cellColor;
+              },
+              /* no reason, just vibes */
+              HELPERS.rng(100, 4500),
+              cellElement);
 
             timeouts.push(cellTimeout);
           }
@@ -139,7 +215,7 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
 
     generateColorGroups(matrix);
 
-    setColorRotationInterval(setInterval(() => {
+    setColorRotationInterval(window.setInterval(() => {
       generateColorGroups(matrix);
       /* repaint interval duration tied to safeSpeed */
     }, 5500 - (safeSpeed * 100)));
@@ -199,7 +275,21 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
       /* free memory */
       clearTimers();
     };
-  }, [dimensions, speed, isInteractive, renderPattern]);
+  }, [dimensions, speed, isInteractive, renderPattern, renderPalette, padding]);
+
+  useEffect(() => {
+    const allTimersTimer = window.setInterval(
+      (clearTimersFn: () => void) => {
+        clearTimersFn();
+      },
+      (5500 - (safeSpeed * 100)) * 2,
+      // 7000,
+      clearTimers);
+
+    return () => {
+      window.clearInterval(allTimersTimer);
+    };
+  }, []);
 
   return (
     <section className="led-grid">
@@ -232,7 +322,10 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
                     key={`cell-${rowIndex}-${columnIndex}`}
                     id={`cell-${rowIndex}-${columnIndex}`}
                     className="led-grid__cell"
-                    style={{width: `${100 / safeDimensions}%`}}
+                    style={{
+                      width: `${100 / safeDimensions}%`,
+                      padding: `${safePadding}px`,
+                    }}
                     onMouseEnter={(e) => {
                       handleMouseOverCell(e, rowIndex, columnIndex, 'enter');
                     }}
@@ -243,6 +336,7 @@ function LEDGrid(props: ILEDGridProps): JSX.Element {
                     <div
                       id={`cell-body-${rowIndex}-${columnIndex}`}
                       className="led-grid__cell__body"
+                      style={{borderRadius: safePadding > 0 ? '2px' : '0'}}
                     />
                   </div>
                 );

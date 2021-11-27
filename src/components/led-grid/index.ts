@@ -1,2 +1,2 @@
 export {default} from './led-grid';
-export type {ILEDGridProps} from './types';
+export type {ILEDGridProps, RenderPatternTypes, LEDMatrixType} from './types';
